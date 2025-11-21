@@ -1,3 +1,4 @@
+#include "supervisor.h"
 #include <iostream>
 #include <unordered_set>
 #include <unistd.h>
