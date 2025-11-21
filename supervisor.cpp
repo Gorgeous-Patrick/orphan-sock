@@ -1,9 +1,12 @@
 #include <iostream>
-#include <shared_ptr.h>
 #include <unordered_set>
+#include <unistd.h>
+#include <memory>
 #include <unordered_map>
+#include <vector>
 using namespace std;
-typedef linux_fd_t int;
+
+typedef int linux_fd_t;
 
 class exposed_fd_t {
   linux_fd_t linux_fd;
@@ -12,18 +15,26 @@ class exposed_fd_t {
   linux_fd_t get_linux_fd() const { return linux_fd; }
   ~exposed_fd_t() {
     // Close the underlying linux fd when this object is destroyed
-    close(linux_fd);
+    if (close(linux_fd) == -1) {
+        perror("Close failed");
+    }
   }
 };
+typedef shared_ptr<exposed_fd_t> exposed_fd_ptr;
 
 // Each process has a set of file descriptors
 // associated with it.
 // And a parent process (or null if init).
+class process_t;
+typedef shared_ptr<process_t> process_ptr;
 class process_t {
-  unordered_set<exposed_fd_ptr> fds;
   process_ptr parent = nullptr;
   public:
   process_t(process_ptr parent_proc) : parent(parent_proc) {}
+  unordered_set<exposed_fd_ptr> fds;
+  process_ptr get_parent() {
+      return parent;
+  }
   ~process_t() {
     // Hand the fds to the parent process on destruction
     if (parent) {
@@ -35,9 +46,8 @@ class process_t {
   }
 };
 
-typedef shared_ptr<process_t> process_ptr;
 
-typedef unordered_map<process_ptr> process_lib_t;
+typedef unordered_map<pid_t, process_ptr> process_lib_t;
 process_lib_t process_lib;
 
 
@@ -58,7 +68,7 @@ bool is_linux_fd_associated_with_process(process_ptr proc, linux_fd_t fd) {
 bool is_linux_fd_associated_with_any_child_recursively(process_ptr proc, linux_fd_t fd) {
   for (const auto& entry : process_lib) {
     process_ptr child_proc = entry.second;
-    if (child_proc->parent == proc) {
+    if (child_proc->get_parent() == proc) {
       if (is_linux_fd_associated_with_process(child_proc, fd) ||
           is_linux_fd_associated_with_any_child_recursively(child_proc, fd)) {
         return true;
@@ -112,7 +122,6 @@ int register_hand_over_fd(pid_t pid, linux_fd_t fd) {
   proc->fds.erase_if([fd](const exposed_fd_ptr& exposed_fd) {
     return exposed_fd->get_linux_fd() == fd;
   });
-
   associate_linux_fd_with_process(proc, fd);
   return 0; // Success
 }
