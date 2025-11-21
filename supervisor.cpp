@@ -90,8 +90,7 @@ int register_fork_process(pid_t parent, pid_t child, vector<linux_fd_t> fds_to_a
   for (const auto & fd : fds_to_associate) {
     if (!is_linux_fd_associated_with_process(parent_proc, fd) &&
         !is_linux_fd_associated_with_any_child_recursively(parent_proc, fd)) {
-      cerr << "FD " << fd << " not accessible by parent process!" << endl;
-      return -1; // Error
+      cerr << "FD " << fd << " not accessible by parent process!" << endl; return -1; // Error
     }
   }
   process_ptr child_proc = make_shared<process_t>(parent_proc);
