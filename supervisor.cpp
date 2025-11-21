@@ -1,13 +1,9 @@
 #include "supervisor.h"
 #include <iostream>
-#include <unordered_set>
-#include <unistd.h>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 using namespace std;
-
-typedef int linux_fd_t;
 
 class exposed_fd_t {
   linux_fd_t linux_fd;
@@ -21,6 +17,7 @@ class exposed_fd_t {
     }
   }
 };
+
 typedef shared_ptr<exposed_fd_t> exposed_fd_ptr;
 
 // Each process has a set of file descriptors
@@ -32,7 +29,7 @@ class process_t {
   process_ptr parent = nullptr;
   public:
   process_t(process_ptr parent_proc) : parent(parent_proc) {}
-  unordered_set<exposed_fd_ptr> fds;
+  vector<exposed_fd_ptr> fds;
   process_ptr get_parent() {
       return parent;
   }
@@ -40,7 +37,7 @@ class process_t {
     // Hand the fds to the parent process on destruction
     if (parent) {
       for (const auto& fd : fds) {
-        parent->fds.insert(fd);
+        parent->fds.emplace_back(fd);
       }
       fds.clear();
     }
@@ -54,7 +51,7 @@ process_lib_t process_lib;
 
 void associate_linux_fd_with_process(process_ptr proc, linux_fd_t fd) {
   exposed_fd_ptr exposed_fd = make_shared<exposed_fd_t>(fd);
-  proc->fds.insert(exposed_fd);
+  proc->fds.emplace_back(exposed_fd);
 }
 
 bool is_linux_fd_associated_with_process(process_ptr proc, linux_fd_t fd) {
@@ -119,7 +116,7 @@ int register_hand_over_fd(pid_t pid, linux_fd_t fd) {
     return -1; // Error
   }
   // erase fd from pid
-  proc->fds.erase_if([fd](const exposed_fd_ptr& exposed_fd) {
+  erase_if(proc->fds, [fd](const exposed_fd_ptr& exposed_fd) {
     return exposed_fd->get_linux_fd() == fd;
   });
   associate_linux_fd_with_process(proc, fd);
