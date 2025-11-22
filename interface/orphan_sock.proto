@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package example;
+package orphan_sock;
 
-service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply);
+service OrphanSockServer {
+  // rpc SayHello (HelloRequest) returns (HelloReply);
+  rpc RegisterCloseProcess (CloseRequest)  returns (Empty);
 }
 
-message HelloRequest {
-  string name = 1;
+message Empty {
 }
 
-message HelloReply {
-  string message = 1;
+message CloseRequest {
+  int64 process_id = 1;
 }
