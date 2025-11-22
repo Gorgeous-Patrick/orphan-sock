@@ -19,5 +19,5 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # Set the output folder for archive targets (import libraries for DLLs on Windows)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-add_subdirectory(server)
 add_subdirectory(interface)
+add_subdirectory(server)

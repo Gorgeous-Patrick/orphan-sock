@@ -56,20 +56,20 @@ foreach(PROTO_FILE ${PROTO_FILES})
 endforeach()
 
 # Library that contains all generated code
-add_library(orphan_socks_proto
+add_library(orphan_sock_proto
     ${PROTO_SRCS}
     ${PROTO_HDRS}
     ${GRPC_SRCS}
     ${GRPC_HDRS}
 )
 
-target_link_libraries(orphan_socks_proto
+target_link_libraries(orphan_sock_proto
     PUBLIC
         gRPC::grpc++
         protobuf::libprotobuf
 )
 
-target_include_directories(orphan_socks_proto
+target_include_directories(orphan_sock_proto
     PUBLIC
         ${GENERATED_PROTO_DIR}
 )

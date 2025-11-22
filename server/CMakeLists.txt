@@ -1,5 +1,5 @@
 # Project name + language
-project(orphansocks_server LANGUAGES C CXX)
+project(orphansock_server LANGUAGES C CXX)
 
 # Add your source files
 set(LIB_SOURCES supervisor.cpp)
@@ -13,4 +13,5 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ../interface/generated)
 target_link_libraries(${PROJECT_NAME}
     PRIVATE orphan_sock_server_impl
+    orphan_sock_proto
 )

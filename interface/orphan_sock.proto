@@ -3,7 +3,6 @@ syntax = "proto3";
 package orphan_sock;
 
 service OrphanSockServer {
-  // rpc SayHello (HelloRequest) returns (HelloReply);
   rpc RegisterCloseProcess (CloseRequest)  returns (Empty);
 }
 
