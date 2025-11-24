@@ -3,7 +3,7 @@ project(orphansock_server LANGUAGES C CXX)
 
 # Add your source files
 set(LIB_SOURCES supervisor.cpp)
-set(SOURCES main.cpp)
+set(SOURCES main.cpp server.cpp)
 
 
 add_library(orphan_sock_server_impl ${LIB_SOURCES})
