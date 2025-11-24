@@ -1,4 +1,5 @@
 #include "supervisor.h"
+
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -7,13 +8,14 @@ using namespace std;
 
 class exposed_fd_t {
   linux_fd_t linux_fd;
-  public:
+
+ public:
   exposed_fd_t(linux_fd_t fd) : linux_fd(fd) {}
   linux_fd_t get_linux_fd() const { return linux_fd; }
   ~exposed_fd_t() {
     // Close the underlying linux fd when this object is destroyed
     if (close(linux_fd) == -1) {
-        perror("Close failed");
+      perror("Close failed");
     }
   }
 };
@@ -27,12 +29,11 @@ class process_t;
 typedef shared_ptr<process_t> process_ptr;
 class process_t {
   process_ptr parent = nullptr;
-  public:
+
+ public:
   process_t(process_ptr parent_proc) : parent(parent_proc) {}
   vector<exposed_fd_ptr> fds;
-  process_ptr get_parent() {
-      return parent;
-  }
+  process_ptr get_parent() { return parent; }
   ~process_t() {
     // Hand the fds to the parent process on destruction
     if (parent) {
@@ -44,10 +45,8 @@ class process_t {
   }
 };
 
-
 typedef unordered_map<pid_t, process_ptr> process_lib_t;
 process_lib_t process_lib;
-
 
 void associate_linux_fd_with_process(process_ptr proc, linux_fd_t fd) {
   exposed_fd_ptr exposed_fd = make_shared<exposed_fd_t>(fd);
@@ -63,7 +62,8 @@ bool is_linux_fd_associated_with_process(process_ptr proc, linux_fd_t fd) {
   return false;
 }
 
-bool is_linux_fd_associated_with_any_child_recursively(process_ptr proc, linux_fd_t fd) {
+bool is_linux_fd_associated_with_any_child_recursively(process_ptr proc,
+                                                       linux_fd_t fd) {
   for (const auto& entry : process_lib) {
     process_ptr child_proc = entry.second;
     if (child_proc->get_parent() == proc) {
@@ -76,49 +76,50 @@ bool is_linux_fd_associated_with_any_child_recursively(process_ptr proc, linux_f
   return false;
 }
 
-
-int register_fork_process(pid_t parent, pid_t child, vector<linux_fd_t> fds_to_associate) {
+int register_fork_process(pid_t parent, pid_t child,
+                          vector<linux_fd_t> fds_to_associate) {
   process_ptr parent_proc = process_lib[parent];
   if (!parent_proc) {
     cerr << "Parent process not found!" << endl;
-    return -1; // Error
+    return -1;  // Error
   }
   // Make sure that all fds are accessible by parent.
-  for (const auto & fd : fds_to_associate) {
+  for (const auto& fd : fds_to_associate) {
     if (!is_linux_fd_associated_with_process(parent_proc, fd) &&
         !is_linux_fd_associated_with_any_child_recursively(parent_proc, fd)) {
-      cerr << "FD " << fd << " not accessible by parent process!" << endl; return -1; // Error
+      cerr << "FD " << fd << " not accessible by parent process!" << endl;
+      return -1;  // Error
     }
   }
   process_ptr child_proc = make_shared<process_t>(parent_proc);
   process_lib[child] = child_proc;
 
-  for (const auto & fd : fds_to_associate) {
+  for (const auto& fd : fds_to_associate) {
     associate_linux_fd_with_process(child_proc, fd);
   }
 
-  return 0; // Success
+  return 0;  // Success
 }
 
 int register_close_process(pid_t pid) {
   if (process_lib.find(pid) == process_lib.end()) {
     cerr << "Process not found!" << endl;
-    return -1; // Error
+    return -1;  // Error
   }
   process_lib.erase(pid);
-  return 0; // Success
+  return 0;  // Success
 }
 
 int register_hand_over_fd(pid_t pid, linux_fd_t fd) {
   process_ptr proc = process_lib[pid];
   if (!proc) {
     cerr << "Process not found!" << endl;
-    return -1; // Error
+    return -1;  // Error
   }
   // erase fd from pid
   erase_if(proc->fds, [fd](const exposed_fd_ptr& exposed_fd) {
     return exposed_fd->get_linux_fd() == fd;
   });
   associate_linux_fd_with_process(proc, fd);
-  return 0; // Success
+  return 0;  // Success
 }
