@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <mutex>
 
 Server::Server() {
   ::unlink(SOCK_PATH.c_str());
@@ -28,11 +29,16 @@ Server::Server() {
     // Get PID via SO_PEERCRED
     struct ucred cred;
     socklen_t len = sizeof(cred);
-    if (::getsockopt(client_fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) == 0) {
-      std::cout << "New client: pid=" << cred.pid << " uid=" << cred.uid
-                << " gid=" << cred.gid << "\n";
-      // clients[client_fd] = Server::ClientInfo(cred.pid);
-      clients.insert({client_fd, Server::ClientInfo(cred.pid)});
+    {
+      std::unique_lock<std::shared_mutex> lock(Server::clients_lock);
+      if (::getsockopt(client_fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) == 0) {
+        std::cout << "New client: pid=" << cred.pid << " uid=" << cred.uid
+                  << " gid=" << cred.gid << "\n";
+        // clients[client_fd] = Server::ClientInfo(cred.pid);
+        shared_mutex_ptr client_fd_lock;
+        Server::ClientInfoLocked client_info_locked =
+            make_tuple(client_fd_lock, Server::ClientInfo(cred.pid));
+      }
     }
   }
 }
