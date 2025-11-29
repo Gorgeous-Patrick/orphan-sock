@@ -8,3 +8,4 @@ bin
 lib
 generated
 env
+.DS_Store
