@@ -6,6 +6,7 @@ compile_commands.json
 .cache
 bin
 lib
+build/
 generated
 env
 .DS_Store
