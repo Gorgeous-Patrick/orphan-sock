@@ -1,4 +1,6 @@
 #pragma once
+#include "orphan_sock.pb.h"
+
 #include <unistd.h>
 
 #include <memory>

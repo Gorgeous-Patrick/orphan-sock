@@ -9,7 +9,7 @@ add_library(liborphan_sock
 )
 
 target_link_libraries(liborphan_sock
-    PUBLIC
+    PRIVATE
         orphan_sock_proto
 )
 
